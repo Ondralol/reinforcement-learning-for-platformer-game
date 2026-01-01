@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+[tool.pylint.MASTER]
+ignore = ["tests", "venv", ".git", "__pycache__"]
+extension-pkg-allow-list = ["PySide6"] # Stop false positive import errors from Qt
+
+[tool.pylint.TYPECHECK]
+# Prevent false positives from Qt
+generated-members = [
+    "PySide6.*",
+    ".*connect", 
+]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["C0301", "C0103"]
+
+[tool.pylint.FORMAT]
+max-line-length = 120
+
+[tool.pylint.REPORTS]
+output-format = "colorized"
+reports = "no"
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["src"]

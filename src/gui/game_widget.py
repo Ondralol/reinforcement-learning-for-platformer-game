@@ -16,7 +16,7 @@ COLORS = {
 }
 
 # Definive cell size for visualisation
-CELL_SIZE = 32
+CELL_SIZE = 16
 
 
 class MapWidget(QWidget):
@@ -52,21 +52,21 @@ class MapWidget(QWidget):
         # Game update loop
         self.game_timer = QTimer()
         self.game_timer.timeout.connect(self.game_loop)
-        self.game_timer.start(16) # 60fps
+        self.game_timer.start(16)  # 60fps
 
     def paintEvent(self, _event):
         """Re-renders the whole widget"""
-        player_x = int(self.game.x)
-        player_y = int(self.game.y)
-        #print(f"Current player coordinates: ({player_x}, {player_y})")
-        
+        player_x = int(self.game.x * CELL_SIZE / TILE_SIZE)
+        player_y = int(self.game.y * CELL_SIZE / TILE_SIZE)
+        # print(f"Current player coordinates: ({player_x}, {player_y})")
+
         painter = QPainter(self)
         # Draws the map
         for y, row in enumerate(self.game.map):
             for x, cell in enumerate(row):
                 draw_x = x * CELL_SIZE
                 draw_y = y * CELL_SIZE
-                
+
                 match cell:
                     case "#":
                         painter.drawPixmap(draw_x, draw_y, self.grass)
@@ -98,10 +98,10 @@ class MapWidget(QWidget):
 
     def game_loop(self):
         """Game loop that updates the game state and makes a movement based on pressed keys."""
-        
+
         # Default move (no move was made)
         move_dir = MovementDirection.IDLE
-        
+
         if Qt.Key_W in self.pressed_keys and self.game.on_ground:
             move_dir = MovementDirection.JUMP
         elif Qt.Key_A in self.pressed_keys and Qt.Key_D not in self.pressed_keys:
@@ -110,9 +110,10 @@ class MapWidget(QWidget):
             move_dir = MovementDirection.RIGHT
 
         # Make move
-        self.game.update(move_dir)    
-        
+        self.game.update(move_dir)
+
         self.update()
+
 
 class GameWidget(QWidget):
     """Game widget, that has MapWidget inside of it."""

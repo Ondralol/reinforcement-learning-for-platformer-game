@@ -1,8 +1,8 @@
 """Visualisation of the Game"""
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
 from PySide6.QtGui import QColor, QPainter, QPixmap
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QSize
 
 from game.game import TILE_SIZE, Game, MovementDirection
 
@@ -28,64 +28,109 @@ class MapWidget(QWidget):
         self.parent = parent
         self.game = game
 
-        # Set fix size of the game
-        self.setFixedSize(len(game.map[0]) * CELL_SIZE, len(game.map) * CELL_SIZE)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Store dimensions
+        self.map_w_tiles = len(game.map[0])
+        self.map_h_tiles = len(game.map)
+
+        self.cell_size = CELL_SIZE  # Default size
+        self.offset_x = 0  # Offset to the center of the map horizontally
+        self.offset_y = 0  # Offset to the center of the map vertically
 
         # Load sprints
-        self.dirt = QPixmap("data/dirt.png").scaled(CELL_SIZE, CELL_SIZE)
-        self.grass = QPixmap("data/grass.png").scaled(CELL_SIZE, CELL_SIZE)
-        self.coin = QPixmap("data/coin.png").scaled(CELL_SIZE, CELL_SIZE)
-        self.sky = QPixmap("data/sky.png").scaled(CELL_SIZE, CELL_SIZE)
-        self.player = QPixmap("data/player1.png").scaled(CELL_SIZE, CELL_SIZE * 2)
-        self.flag = QPixmap("data/flag.png").scaled(CELL_SIZE, CELL_SIZE * 2)
+        self.dirt = QPixmap("data/dirt.png")
+        self.grass = QPixmap("data/grass.png")
+        self.coin = QPixmap("data/coin.png")
+        self.sky = QPixmap("data/sky.png")
+        self.player = QPixmap("data/player1.png")
+        self.flag = QPixmap("data/flag.png")
 
+        # Scaled sprints
+        self.scaled_dirt = None
+        self.scaled_grass = None
+        self.scaled_coin = None
+        self.scaled_sky = None
+        self.scaled_player = None
+        self.scaled_flag = None
+
+        # Focus window
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
-        # Game UI loop
-        self.render_timer = QTimer()
-        self.render_timer.timeout.connect(self.update)
-        self.render_timer.start(16)  # Approximately 60 FPS
-
+        # Initiate keyboard input set
         self.pressed_keys = set()
+
+        # Initial resize
+        self.recalculate_scale()
 
         # Game update loop
         self.game_timer = QTimer()
         self.game_timer.timeout.connect(self.game_loop)
         self.game_timer.start(16)  # 60fps
 
+    def recalculate_scale(self):
+        """Calculates new scales based on window size."""
+        curr_w = self.width()
+        curr_h = self.height()
+
+        scale_x = curr_w / self.map_w_tiles
+        scale_y = curr_h / self.map_h_tiles
+
+        # Calculate new cell size
+        self.cell_size = int(min(scale_x, scale_y))
+
+        # Cell size needs to be always >= 1
+        self.cell_size = max(self.cell_size, 1)
+
+        # Calculate total area and offsets
+        total_map_w = self.cell_size * self.map_w_tiles
+        total_map_h = self.cell_size * self.map_h_tiles
+        self.offset_x = (curr_w - total_map_w) // 2
+        self.offset_y = (curr_h - total_map_h) // 2
+
+        # Rescale the sprites
+        self.scaled_dirt = self.dirt.scaled(self.cell_size, self.cell_size)
+        self.scaled_grass = self.grass.scaled(self.cell_size, self.cell_size)
+        self.scaled_coin = self.coin.scaled(self.cell_size, self.cell_size)
+        self.scaled_sky = self.sky.scaled(self.cell_size, self.cell_size)
+
+        self.scaled_player = self.player.scaled(self.cell_size, self.cell_size * 2)
+        self.scaled_flag = self.flag.scaled(self.cell_size, self.cell_size * 2)
+
+    def resizeEvent(self, event):
+        """Recalculate scale factor upon resizing."""
+        self.recalculate_scale()
+        super().resizeEvent(event)
+
     def paintEvent(self, _event):
         """Re-renders the whole widget"""
-        player_x = int(self.game.x * CELL_SIZE / TILE_SIZE)
-        player_y = int(self.game.y * CELL_SIZE / TILE_SIZE)
-        # print(f"Current player coordinates: ({player_x}, {player_y})")
 
         painter = QPainter(self)
         # Draws the map
         for y, row in enumerate(self.game.map):
             for x, cell in enumerate(row):
-                draw_x = x * CELL_SIZE
-                draw_y = y * CELL_SIZE
+                draw_x = self.offset_x + (x * self.cell_size)
+                draw_y = self.offset_y + (y * self.cell_size)
 
                 match cell:
                     case "#":
-                        painter.drawPixmap(draw_x, draw_y, self.grass)
+                        painter.drawPixmap(draw_x, draw_y, self.scaled_grass)
                     case "X":
-                        painter.drawPixmap(draw_x, draw_y, self.dirt)
+                        painter.drawPixmap(draw_x, draw_y, self.scaled_dirt)
                     case ".":
-                        painter.drawPixmap(draw_x, draw_y, self.sky)
+                        painter.drawPixmap(draw_x, draw_y, self.scaled_sky)
                     case "*":
-                        painter.drawPixmap(draw_x, draw_y, self.coin)
+                        painter.drawPixmap(draw_x, draw_y, self.scaled_coin)
                     case "E":
-                        painter.drawPixmap(draw_x, draw_y - CELL_SIZE, self.flag)
+                        painter.drawPixmap(draw_x, draw_y - self.cell_size, self.scaled_flag)
 
         # Draws player position
-        painter.drawPixmap(player_x, player_y, self.player)
-
-        # color = colors.get(cell, QColor(255, 255, 255))
-        # painter.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, color)
-        # painter.setPen(Qt.black)
-        # painter.drawRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+        scale_factor = self.cell_size / TILE_SIZE
+        player_x = self.offset_x + int(self.game.x * scale_factor)
+        player_y = self.offset_y + int(self.game.y * scale_factor)
+        # print(f"Current player coordinates: ({player_x}, {player_y})")
+        painter.drawPixmap(player_x, player_y, self.scaled_player)
 
     def keyPressEvent(self, event):
         """Detects key presses."""
@@ -114,6 +159,10 @@ class MapWidget(QWidget):
 
         self.update()
 
+    def sizeHint(self):
+        """Preffered widget size"""
+        return QSize(1440, 950)
+
 
 class GameWidget(QWidget):
     """Game widget, that has MapWidget inside of it."""
@@ -129,6 +178,6 @@ class GameWidget(QWidget):
         self.layout.addStretch()
         self.setLayout(self.layout)
 
-        self.layout.addWidget(MapWidget(self, game), alignment=Qt.AlignCenter)
+        self.layout.addWidget(MapWidget(self, game))
 
         self.game = Game()

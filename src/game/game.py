@@ -1,6 +1,4 @@
 """This file includes the entire game logic/physics"""
-
-import threading
 from enum import Enum, auto
 
 TILE_SIZE = 32  # 32 pixels in one block
@@ -180,8 +178,7 @@ class Game:
         # Apply gravity
         self.vel_y += GRAVITY
         # Limit falling speed
-        if self.vel_y > MAX_FALLING_SPEED:
-            self.vel_y = MAX_FALLING_SPEED
+        self.vel_y = min(self.vel_y, MAX_FALLING_SPEED)
 
         # Apply the moves
         self.x += self.vel_x

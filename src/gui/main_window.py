@@ -14,6 +14,6 @@ class MainWindow(QMainWindow):
         self.app = app
         self.setWindowTitle("Agent Learns to play Game")
         self.showMaximized()
-        self.setMinimumSize(1440, 920)
+        self.setMinimumSize(900, 450)
 
         self.setCentralWidget(MenuWidget(self))

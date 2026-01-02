@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtCore import Qt, QTimer
 
-from game.game import PLAYER_RATIO, Game, MovementDirection
+from game.game import TILE_SIZE, Game, MovementDirection
 
 # Colors for tiles
 COLORS = {
@@ -47,41 +47,40 @@ class MapWidget(QWidget):
         self.render_timer.timeout.connect(self.update)
         self.render_timer.start(16)  # Approximately 60 FPS
 
-        # Game movement loop
-        self.movement_timer = QTimer()
-        self.movement_timer.timeout.connect(self.update_movement)
-        self.movement_timer.start(16) # 60fps
-
         self.pressed_keys = set()
+
+        # Game update loop
+        self.game_timer = QTimer()
+        self.game_timer.timeout.connect(self.game_loop)
+        self.game_timer.start(16) # 60fps
 
     def paintEvent(self, _event):
         """Re-renders the whole widget"""
-
-        print(self.game.player_position)
+        player_x = int(self.game.x)
+        player_y = int(self.game.y)
+        #print(f"Current player coordinates: ({player_x}, {player_y})")
         
         painter = QPainter(self)
         # Draws the map
         for y, row in enumerate(self.game.map):
             for x, cell in enumerate(row):
+                draw_x = x * CELL_SIZE
+                draw_y = y * CELL_SIZE
+                
                 match cell:
                     case "#":
-                        painter.drawPixmap(x * CELL_SIZE, y * CELL_SIZE, self.grass)
+                        painter.drawPixmap(draw_x, draw_y, self.grass)
                     case "X":
-                        painter.drawPixmap(x * CELL_SIZE, y * CELL_SIZE, self.dirt)
+                        painter.drawPixmap(draw_x, draw_y, self.dirt)
                     case ".":
-                        painter.drawPixmap(x * CELL_SIZE, y * CELL_SIZE, self.sky)
+                        painter.drawPixmap(draw_x, draw_y, self.sky)
                     case "*":
-                        painter.drawPixmap(x * CELL_SIZE, y * CELL_SIZE, self.coin)
+                        painter.drawPixmap(draw_x, draw_y, self.coin)
                     case "E":
-                        painter.drawPixmap(x * CELL_SIZE, y * CELL_SIZE - CELL_SIZE, self.flag)
+                        painter.drawPixmap(draw_x, draw_y - CELL_SIZE, self.flag)
 
-        x, y = self.game.player_position
         # Draws player position
-        painter.drawPixmap(
-            (x // PLAYER_RATIO) * CELL_SIZE + (x % PLAYER_RATIO) * CELL_SIZE // PLAYER_RATIO,
-            (y // PLAYER_RATIO) * CELL_SIZE + (y % PLAYER_RATIO) * CELL_SIZE // PLAYER_RATIO - CELL_SIZE,
-            self.player,
-        )
+        painter.drawPixmap(player_x, player_y, self.player)
 
         # color = colors.get(cell, QColor(255, 255, 255))
         # painter.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, color)
@@ -97,19 +96,23 @@ class MapWidget(QWidget):
         if event.key() in self.pressed_keys:
             self.pressed_keys.remove(event.key())
 
-    def update_movement(self):
-        """Make a movement based on pressed keys."""
-        if Qt.Key_A in self.pressed_keys and len(self.pressed_keys) == 1:
-            self.game.move_player(MovementDirection.LEFT)
-        elif Qt.Key_D in self.pressed_keys and len(self.pressed_keys) == 1:
-            self.game.move_player(MovementDirection.RIGHT)
-        elif Qt.Key_W in self.pressed_keys and len(self.pressed_keys) == 1:
-            self.game.move_player(MovementDirection.JUMP)
-        elif Qt.Key_A in self.pressed_keys and Qt.Key_W in self.pressed_keys and len(self.pressed_keys) == 2:
-            self.game.move_player(MovementDirection.LEFT_JUMP)
-        elif Qt.Key_D in self.pressed_keys and Qt.Key_W in self.pressed_keys and len(self.pressed_keys) == 2:
-            self.game.move_player(MovementDirection.RIGHT_JUMP)
+    def game_loop(self):
+        """Game loop that updates the game state and makes a movement based on pressed keys."""
+        
+        # Default move (no move was made)
+        move_dir = MovementDirection.IDLE
+        
+        if Qt.Key_W in self.pressed_keys and self.game.on_ground:
+            move_dir = MovementDirection.JUMP
+        elif Qt.Key_A in self.pressed_keys and Qt.Key_D not in self.pressed_keys:
+            move_dir = MovementDirection.LEFT
+        elif Qt.Key_D in self.pressed_keys and Qt.Key_A not in self.pressed_keys:
+            move_dir = MovementDirection.RIGHT
 
+        # Make move
+        self.game.update(move_dir)    
+        
+        self.update()
 
 class GameWidget(QWidget):
     """Game widget, that has MapWidget inside of it."""

@@ -1,6 +1,8 @@
 """This file includes the entire game logic/physics"""
 from enum import Enum, auto
 
+from PySide6.QtCore import QElapsedTimer 
+
 TILE_SIZE = 32  # 32 pixels in one block
 GRAVITY = 0.5  # Downward acceleration per frame
 JUMP_STRENGTH = -12.0  # Upward velocity when jumping
@@ -12,10 +14,10 @@ MAX_FALLING_SPEED = 10.0  # Maximal Y axis falling speed
 class MovementDirection(Enum):
     """Defines all possible movement directions."""
 
-    IDLE = auto()
-    LEFT = auto()
-    RIGHT = auto()
-    JUMP = auto()
+    IDLE = 0
+    LEFT = 1
+    RIGHT = 2
+    JUMP = 3
 
 
 class Game:
@@ -27,21 +29,14 @@ class Game:
         Args:
             map_path: Path to txt file containing map of the level
         """
-        # Load map
-        self.map = []
-        self.width = 0
-        self.height = 0
-        self.load_map(map_path)
-
-        # Set player state
-        self.x = 0.0
-        self.y = 0.0
-        self.vel_x = 0.0
-        self.vel_y = 0.0
-        self.on_ground = False
-        self.coins_collected = 0
-        self.level_finished = False
-        self.find_player_start()
+        
+        self.current_map_path = map_path
+        # Set timer
+        self.game_timer = QElapsedTimer()
+        self.current_game_time = 0.0
+        
+        # Restart level initially
+        self.restart_game()
 
     def load_map(self, map_path: str):
         """Loads map from path."""
@@ -64,6 +59,39 @@ class Game:
                     self.y = TILE_SIZE * y
                     return
 
+    def restart_game(self):
+        """Restarts game."""
+        
+        # Load map
+        self.map = []
+        self.width = 0
+        self.height = 0
+        self.load_map(self.current_map_path)
+
+        # Set player state
+        self.x = 0.0
+        self.y = 0.0
+        self.vel_x = 0.0
+        self.vel_y = 0.0
+        self.on_ground = False
+        self.game_completed = False
+        self.game_over = False
+        self.find_player_start()
+        
+        
+        # Stats
+        self.game_timer.start() # Restarts timer
+        self.coins_collected = 0
+    
+    def get_formatted_time(self):
+        """Formats elapsed time"""
+        
+        seconds = (self.current_game_time // 1000) % 60
+        minutes = self.current_game_time // 60000
+        
+        return f"{minutes:02}:{seconds:02}"
+            
+    
     def get_tile(self, x, y):
         """Return tile on map based on x, y coordinates"""
         if 0 <= y < self.height and 0 <= x < self.width:
@@ -105,8 +133,12 @@ class Game:
                 # Replace coin with air upon collecting it
                 self.map[gy][gx] = "."
             elif tile == "E":
-                self.level_finished = True
+                self.game_completed = True
                 print("Victory")
+                return
+            elif tile == "-":
+                self.game_over = True
+                print("Game Over")
                 return
 
         # Check wall collisions for x axis movement
@@ -154,9 +186,12 @@ class Game:
             move: New movement. Default movement is IDLE (no move)
         """
 
-        # If level is finished, make no additional move
-        if self.level_finished:
+        # If level is finished (successfully) or game is over (player died), make no additional move
+        if self.game_completed or self.game_over:
             return
+        
+        # Update time
+        self.current_game_time = self.game_timer.elapsed()
 
         # Apply horizontal input
         if move == MovementDirection.LEFT:
@@ -185,3 +220,68 @@ class Game:
         self.check_collisions(x_axis=True)
         self.y += self.vel_y
         self.check_collisions(x_axis=False)
+        
+    def agent_get_state(self, size = 5):
+        """Returns simplifed size x size grind around the player
+        
+        Args:
+            size: Size of the grid
+        """    
+        
+        # Player's position
+        player_x = int(self.x // TILE_SIZE)
+        player_y = int(self.y // TILE_SIZE)
+        
+        state = []
+        
+        for y in range(-2, 3):
+            for x in range(-2, 3):
+                tile = self.get_tile(player_x + x, player_y + y) 
+                
+                # Barrier
+                if tile in ("#", "X"):
+                    state.append(1)
+                # Void
+                elif tile == "-":
+                    state.append(-1)
+                # Coin
+                elif tile == "*":
+                    state.append(2)
+                # End
+                elif tile == "E":
+                    state.append(3)
+                else:
+                    state.append(0)
+                    
+        return state
+        
+    def agent_step(self, action: int):
+        """Executes one agent action and returns result of that action.
+        
+        Args:
+            action: Type of action (0, 1, 2, etc..)
+        """
+        
+        # Previously collected coins
+        prev_coins = self.coins_collected
+        
+        # Make a move
+        self.update(MovementDirection(action))
+        
+        reward = 0
+        
+        if self.coins_collected > prev_coins:
+            reward += 10
+            
+        done = False
+        if self.game_over:
+            reward -= 100
+            done = True
+        if self.game_completed:
+            reward += 100
+            done = True
+        
+        next_state = self.agent_get_state()
+        return next_state, reward, done
+        
+        

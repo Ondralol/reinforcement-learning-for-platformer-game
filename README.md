@@ -22,4 +22,5 @@ Use `PYTHONPATH=src pdoc ./src -o ./docs` and then find docs in `docs/index.html
 `#` Grass \
 `X` = Dirt \
 `.` = Air \
-`*` = Coin 
+`*` = Coin \ 
+`-` = Void

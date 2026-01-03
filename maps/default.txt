@@ -8,7 +8,7 @@
 ............#................................................................
 ...........##..........................*.....................................
 ....S.....###......................*.................*..................E....
-#############################################################################
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
+##############################..################..###########################
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..XXXXXXXXXXXXXXXX..XXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..XXXXXXXXXXXXXXXX..XXXXXXXXXXXXXXXXXXXXXXXXXXX
+-----------------------------------------------------------------------------

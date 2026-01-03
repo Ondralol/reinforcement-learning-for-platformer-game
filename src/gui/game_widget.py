@@ -1,7 +1,7 @@
 """Visualisation of the Game"""
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
-from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtGui import QColor, QPainter, QPixmap, QFont, QFontMetrics
 from PySide6.QtCore import Qt, QTimer, QSize
 
 from game.game import TILE_SIZE, Game, MovementDirection
@@ -45,6 +45,7 @@ class MapWidget(QWidget):
         self.sky = QPixmap("data/sky.png")
         self.player = QPixmap("data/player1.png")
         self.flag = QPixmap("data/flag.png")
+        self.void = QPixmap("data/void.png")
 
         # Scaled sprints
         self.scaled_dirt = None
@@ -53,6 +54,8 @@ class MapWidget(QWidget):
         self.scaled_sky = None
         self.scaled_player = None
         self.scaled_flag = None
+        self.scaled_void = None
+        
 
         # Focus window
         self.setFocusPolicy(Qt.StrongFocus)
@@ -94,17 +97,19 @@ class MapWidget(QWidget):
         self.scaled_grass = self.grass.scaled(self.cell_size, self.cell_size)
         self.scaled_coin = self.coin.scaled(self.cell_size, self.cell_size)
         self.scaled_sky = self.sky.scaled(self.cell_size, self.cell_size)
+        self.scaled_void = self.void.scaled(self.cell_size, self.cell_size)
 
         self.scaled_player = self.player.scaled(self.cell_size, self.cell_size * 2)
         self.scaled_flag = self.flag.scaled(self.cell_size, self.cell_size * 2)
+        
 
     def resizeEvent(self, event):
         """Recalculate scale factor upon resizing."""
         self.recalculate_scale()
         super().resizeEvent(event)
-
+    
     def paintEvent(self, _event):
-        """Re-renders the whole widget"""
+        """Re-renders the whole game widget"""
 
         painter = QPainter(self)
         # Draws the map
@@ -122,6 +127,8 @@ class MapWidget(QWidget):
                         painter.drawPixmap(draw_x, draw_y, self.scaled_sky)
                     case "*":
                         painter.drawPixmap(draw_x, draw_y, self.scaled_coin)
+                    case "-":
+                        painter.drawPixmap(draw_x, draw_y, self.scaled_void)
                     case "E":
                         painter.drawPixmap(draw_x, draw_y - self.cell_size, self.scaled_flag)
 
@@ -131,6 +138,38 @@ class MapWidget(QWidget):
         player_y = self.offset_y + int(self.game.y * scale_factor)
         # print(f"Current player coordinates: ({player_x}, {player_y})")
         painter.drawPixmap(player_x, player_y, self.scaled_player)
+        
+        
+        # Draw Stats
+        ui_font = QFont("Courier New", self.cell_size / 1.5)
+        ui_font.setBold(True)
+        painter.setFont(ui_font)
+        
+        coin_text = f"Coins: {self.game.coins_collected}"
+        width_coin = QFontMetrics(ui_font).horizontalAdvance(coin_text)
+        time_text = f"Time:  {self.game.get_formatted_time()}"
+
+        
+        painter.setPen(QColor("black"))
+        painter.drawText(self.offset_x + self.cell_size, self.offset_y + self.cell_size, coin_text)
+        painter.drawText(self.offset_x + self.cell_size + width_coin * 1.5, self.offset_y + self.cell_size, time_text)
+        
+        painter.setPen(QColor("gold"))
+        painter.drawText(self.offset_x + self.cell_size - 2, self.offset_y + self.cell_size - 2, coin_text)
+        painter.drawText(self.offset_x + self.cell_size + width_coin * 1.5 - 2, self.offset_y + self.cell_size - 2, time_text)
+        
+        # Print Victory / Game over screens
+        ui_font = QFont("Courier New", self.cell_size * 1.5)
+        painter.setPen(QColor("white"))
+        painter.setFont(ui_font)
+        if self.game.game_completed:
+            victory_text = "Victory!"
+            width_victory = QFontMetrics(ui_font).horizontalAdvance(victory_text)
+            painter.drawText(self.width() // 2 - width_victory // 2, self.height() // 2, victory_text)
+        if self.game.game_over:
+            game_over_text = "Game Over!"
+            width_game_over = QFontMetrics(ui_font).horizontalAdvance(game_over_text)
+            painter.drawText(self.width() // 2 - width_game_over // 2, self.height() // 2, game_over_text)
 
     def keyPressEvent(self, event):
         """Detects key presses."""
@@ -146,13 +185,22 @@ class MapWidget(QWidget):
 
         # Default move (no move was made)
         move_dir = MovementDirection.IDLE
-
-        if Qt.Key_W in self.pressed_keys and self.game.on_ground:
+        
+        # Movement positions
+        
+        # Jump
+        if (Qt.Key_W in self.pressed_keys or Qt.Key_Space in self.pressed_keys) and self.game.on_ground:
             move_dir = MovementDirection.JUMP
+        # Left
         elif Qt.Key_A in self.pressed_keys and Qt.Key_D not in self.pressed_keys:
             move_dir = MovementDirection.LEFT
+        # Right
         elif Qt.Key_D in self.pressed_keys and Qt.Key_A not in self.pressed_keys:
             move_dir = MovementDirection.RIGHT
+        # Restart game
+        elif Qt.Key_R in self.pressed_keys:
+            self.game.restart_game()
+            return
 
         # Make move
         self.game.update(move_dir)

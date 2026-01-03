@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QTimer, QSize
 
 from game.game import TILE_SIZE, Game, MovementDirection
 from agent.train import Train
+from utils.args_config import Config
 
 # Colors for tiles
 COLORS = {
@@ -18,18 +19,19 @@ COLORS = {
 
 # Definive cell size for visualisation
 CELL_SIZE = 16
-STEPS_PER_FRAME = 1000  # How many steps does the agent move per frame
+STEPS_PER_FRAME = 750  # How many steps does the agent move per frame
 
 
 class MapWidget(QWidget):
     """Widget for visualisation the map and the player"""
 
-    def __init__(self, parent, game: Game, agent=False):
+    def __init__(self, parent, game: Game, config: Config, agent=False):
         """Initialize the visualisation by loading the sprints, creating UI and movement loop.
 
         Args:
             game: the game "engine" class
             agent: if agent should play the game
+            config: CLI Arguments
         """
 
         super().__init__(parent)
@@ -37,7 +39,7 @@ class MapWidget(QWidget):
         self.game = game
 
         self.agent = agent
-        self.train = Train()
+        self.train = Train(config)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -282,8 +284,14 @@ class MapWidget(QWidget):
 class GameWidget(QWidget):
     """Game widget, that has MapWidget inside of it."""
 
-    def __init__(self, parent, game: Game, agent: False):
-        """Initialize Game widget and create visualisation using MapWidget."""
+    def __init__(self, parent, game: Game, agent: False, config: Config):
+        """Initialize Game widget and create visualisation using MapWidget.
+        
+        Arguments:
+            game: Game class
+            agent: IF agent should play the game or not
+            config: CLI Arguments
+        """
         super().__init__(parent)
         self.parent = parent
 
@@ -292,7 +300,7 @@ class GameWidget(QWidget):
         self.layout.setContentsMargins(25, 25, 25, 25)
         self.setLayout(self.layout)
 
-        self.map_widget = MapWidget(self, game, agent)
+        self.map_widget = MapWidget(self, game, config, agent)
 
         # Add agent controls
         if agent:
@@ -300,7 +308,7 @@ class GameWidget(QWidget):
 
         self.layout.addWidget(self.map_widget)
         self.layout.addStretch()
-        self.game = Game()
+        self.game = Game(config)
 
     def add_controls(self):
         """Adds slider to change the agent's steps_per_frame."""
@@ -313,7 +321,7 @@ class GameWidget(QWidget):
         # Create slider
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(1)
-        self.slider.setMaximum(5000)  # Might crash application if it's too high because it takes too long to compute
+        self.slider.setMaximum(2500)  # Might crash application if it's too high because it takes too long to compute
         self.slider.setValue(self.map_widget.steps_per_frame)
 
         # Connect slider to a function that updates speed

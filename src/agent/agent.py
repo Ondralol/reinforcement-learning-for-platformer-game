@@ -109,12 +109,18 @@ class Agent:
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
     def save_file(self, filename="agent_data.pkl"):
-        """Saves the qtable to a file."""
+        """Saves the qtable to a file.
+        
+        Currently not used, in future it can be used to save the best moves
+        """
         with open(filename, "wb") as f:
             pickle.dump(self.q_table, f)
 
     def load_file(self, filename="agent_data.pkl"):
-        """Loads the qtable from a file."""
+        """Loads the qtable from a file.
+        
+        Currently not used, in future it can be used to load the best moves that agent has previously learned
+        """
         try:
             with open(filename, "rb") as f:
                 self.q_table = pickle.load(f)

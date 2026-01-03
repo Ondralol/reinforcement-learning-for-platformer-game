@@ -2,16 +2,23 @@
 
 from game.game import Game
 from agent.agent import Agent
+from utils.args_config import Config
 
 GENERATIONS = 100000
-MAX_STEPS = 1500
+#MAX_STEPS = 1500 # 1500 is the best for normal sized maps // Deprecated
 FRAME_SKIP = 4  # How many frames does the agent hold a key
 
 
 class Train:
-    def __init__(self):
-        self.game = Game()
+    def __init__(self, config: Config):
+        """Initializes the training process.
+        
+        Arguments:
+            config: CLI Arguments
+        """
+        self.game = Game(config)
         self.agent = Agent()
+        self.config = config
         self.done = False
         self.total_reward = 0
         self.state = self.game.get_state()
@@ -21,6 +28,10 @@ class Train:
         self.skip_counter = 0
 
     def reset(self):
+        """Resets the training.
+        
+        Reset all states, updates epsilon value and restarts the game
+        """
         # Might seem like duplication, but we don't initially decay the epsilon
         self.done = False
         self.accumulated_reward = 0
@@ -52,7 +63,7 @@ class Train:
             self.agent.learn(self.state, self.action_idx, self.accumulated_reward, next_state, self.done)
             self.skip_counter = 0
 
-        if self.game.steps > MAX_STEPS or self.game.game_completed or self.game.game_over:
+        if self.game.steps > self.config.max_steps or self.game.game_completed or self.game.game_over:
             if self.game.game_completed:
                 self.win_count += 1
             self.done = True

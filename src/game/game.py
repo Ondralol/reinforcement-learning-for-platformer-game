@@ -5,6 +5,8 @@ from enum import Enum
 from PySide6.QtCore import QElapsedTimer
 import numpy as np
 
+from utils.args_config import Config
+
 TILE_SIZE = 32  # 32 pixels in one block
 GRAVITY = 0.5  # Downward acceleration per frame
 JUMP_STRENGTH = -12.0  # Upward velocity when jumping
@@ -25,14 +27,13 @@ class MovementDirection(Enum):
 class Game:
     """Defines entire game logic, physics, etc."""
 
-    def __init__(self, map_path: str = "maps/obstacles.txt"):
+    def __init__(self, config: Config):
         """Initializes game states.
 
         Args:
             map_path: Path to txt file containing map of the level
         """
-
-        self.current_map_path = map_path
+        self.config = config
         # Set timer
         self.game_timer = QElapsedTimer()
         self.current_game_time = 0.0
@@ -79,7 +80,7 @@ class Game:
         self.map = []
         self.width = 0
         self.height = 0
-        self.load_map(self.current_map_path)
+        self.load_map(self.config.map_path)
 
         self.find_player_start()
 
@@ -368,5 +369,5 @@ class Game:
             # Penalty for existing
             reward -= 0.05
 
-        next_state = self.get_state()
+        next_state = self.get_state(self.config.visibility)
         return next_state, reward, done

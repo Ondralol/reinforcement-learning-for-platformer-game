@@ -5,18 +5,22 @@ from PySide6.QtCore import Qt
 
 from game.game import Game
 from gui.game_widget import GameWidget
-
+from utils.args_config import Config
 
 class MenuWidget(QWidget):
     """Main navigation Menu widget."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, config: Config):
         """Initialize Menu widget.
 
         Create "Play Game" and "Agent Plays Game" buttons"
+        
+        Arguments:
+            config: CLI Arguments
         """
         super().__init__(parent)
         self.parent = parent
+        self.config = config
 
         self.layout = QVBoxLayout()
         self.layout.setSpacing(5)
@@ -46,7 +50,7 @@ class MenuWidget(QWidget):
         """
 
         # Initialize Game
-        self.game = Game()
-        game_widget = GameWidget(self.parent, self.game, agent)
+        self.game = Game(self.config)
+        game_widget = GameWidget(self.parent, self.game, agent, self.config)
         self.parent.setCentralWidget(game_widget)
         game_widget.map_widget.setFocus()

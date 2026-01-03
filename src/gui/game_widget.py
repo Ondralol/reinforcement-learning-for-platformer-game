@@ -206,9 +206,15 @@ class MapWidget(QWidget):
 
             painter.setPen(QColor("black"))
             win_count_text = f"Win Count: {self.train.win_count}"
-            painter.drawText(self.offset_x + width_coin * 14, self.offset_y + self.cell_size, win_count_text)
+            painter.drawText(self.offset_x + width_coin * 13, self.offset_y + self.cell_size, win_count_text)
             painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 14 - 2, self.offset_y + self.cell_size - 2, win_count_text)
+            painter.drawText(self.offset_x + width_coin * 13 - 2, self.offset_y + self.cell_size - 2, win_count_text)
+            
+            painter.setPen(QColor("black"))
+            best_step_count_text = f"Best steps: {self.game.best_step_count}"
+            painter.drawText(self.offset_x + width_coin * 16, self.offset_y + self.cell_size, best_step_count_text)
+            painter.setPen(QColor("gold"))
+            painter.drawText(self.offset_x + width_coin * 16 - 2, self.offset_y + self.cell_size - 2, best_step_count_text)
 
     def keyPressEvent(self, event):
         """Detects key presses."""

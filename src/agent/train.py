@@ -3,7 +3,7 @@
 from game.game import Game
 from agent.agent import Agent
 
-EPISODES = 5000
+EPISODES = 100000
 MAX_STEPS = 10000
 
 

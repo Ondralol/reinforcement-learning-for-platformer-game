@@ -25,7 +25,7 @@ class MovementDirection(Enum):
 class Game:
     """Defines entire game logic, physics, etc."""
 
-    def __init__(self, map_path: str = "maps/default.txt"):
+    def __init__(self, map_path: str = "maps/simple_jumps.txt"):
         """Initializes game states.
 
         Args:
@@ -44,6 +44,9 @@ class Game:
         self.load_map(self.current_map_path)
         
         self.find_player_start()
+        
+         # The best amount of steps to reach finish
+        self.best_step_count = float("inf")
         
         # Restart level initially
         self.restart_game()
@@ -146,11 +149,13 @@ class Game:
                 self.map[gy][gx] = "."
             elif tile == "E":
                 self.game_completed = True
-                print("Victory")
+                #print("Victory")
+                if self.steps < self.best_step_count:
+                    self.best_step_count = self.steps
                 return
             elif tile == "-":
                 self.game_over = True
-                print("Game Over")
+                #print("Game Over")
                 return
 
         # Check wall collisions for x axis movement
@@ -332,7 +337,11 @@ class Game:
 
             if distance < self.best_distance:
                 self.best_distance = distance
-                reward += 0.5 * 1000
+                reward += 2.5
+            
+            # If player is on the right side of finish flag
+            if player_pos_x > self.end_pos[0] + 1:
+                reward -= 5.0
 
             # Apply step count
             reward -= 0.1

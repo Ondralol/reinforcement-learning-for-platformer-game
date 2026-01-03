@@ -1,13 +1,14 @@
 """This file includes the entire game logic/physics"""
-from enum import Enum, auto
+from enum import Enum
 
 from PySide6.QtCore import QElapsedTimer 
+import numpy as np
 
 TILE_SIZE = 32  # 32 pixels in one block
 GRAVITY = 0.5  # Downward acceleration per frame
 JUMP_STRENGTH = -12.0  # Upward velocity when jumping
 MOVE_SPEED = 3.0  # Horizontal speed in pixels per frame
-X_VELOCITY_SLIDING = 0.10  # Sliding effect for X-axis velocity
+X_VELOCITY_SLIDING = 0.10  # Sliding effect for X-axis velocity (Btw, this makes it kinda annoying if it's too high)
 MAX_FALLING_SPEED = 10.0  # Maximal Y axis falling speed
 
 
@@ -23,7 +24,7 @@ class MovementDirection(Enum):
 class Game:
     """Defines entire game logic, physics, etc."""
 
-    def __init__(self, map_path: str = "maps/default.txt"):
+    def __init__(self, map_path: str = "maps/default1.txt"):
         """Initializes game states.
 
         Args:
@@ -48,6 +49,9 @@ class Game:
 
     def find_player_start(self):
         """Finds player's starting position on the map."""
+        
+        self.end_pos = np.array([0, 0])
+        
         for y, row in enumerate(self.map):
             for x, cell in enumerate(row):
                 # If cell is Starting position
@@ -58,6 +62,9 @@ class Game:
                     self.x = TILE_SIZE * x
                     self.y = TILE_SIZE * y
                     return
+                # Mark End coordinates
+                if cell == "E":
+                    self.end_pos = np.array([x, y])
 
     def restart_game(self):
         """Restarts game."""
@@ -78,10 +85,13 @@ class Game:
         self.game_over = False
         self.find_player_start()
         
+        player_pos = np.array([self.x / TILE_SIZE, self.y / TILE_SIZE])
+        self.previous_distance = np.linalg.norm(player_pos - self.end_pos)
         
         # Stats
         self.game_timer.start() # Restarts timer
         self.coins_collected = 0
+        self.step_count = 0
     
     def get_formatted_time(self):
         """Formats elapsed time"""
@@ -192,7 +202,7 @@ class Game:
         
         # Update time
         self.current_game_time = self.game_timer.elapsed()
-
+        
         # Apply horizontal input
         if move == MovementDirection.LEFT:
             self.vel_x = -MOVE_SPEED
@@ -216,12 +226,13 @@ class Game:
         self.vel_y = min(self.vel_y, MAX_FALLING_SPEED)
 
         # Apply the moves
+        self.step_count += 1
         self.x += self.vel_x
         self.check_collisions(x_axis=True)
         self.y += self.vel_y
         self.check_collisions(x_axis=False)
         
-    def agent_get_state(self, size = 5):
+    def get_state(self, size = 5):
         """Returns simplifed size x size grind around the player
         
         Args:
@@ -232,30 +243,42 @@ class Game:
         player_x = int(self.x // TILE_SIZE)
         player_y = int(self.y // TILE_SIZE)
         
+        offset_x = (self.x % TILE_SIZE) / TILE_SIZE
+        offset_y = (self.y % TILE_SIZE) / TILE_SIZE
+        
         state = []
         
         for y in range(-2, 3):
+            row = []
             for x in range(-2, 3):
                 tile = self.get_tile(player_x + x, player_y + y) 
-                
                 # Barrier
                 if tile in ("#", "X"):
-                    state.append(1)
+                    row.append(1)
                 # Void
                 elif tile == "-":
-                    state.append(-1)
+                    row.append(-1)
                 # Coin
                 elif tile == "*":
-                    state.append(2)
+                    row.append(2)
                 # End
                 elif tile == "E":
-                    state.append(3)
+                    row.append(3)
                 else:
-                    state.append(0)
-                    
+                    row.append(0)
+            state.append(row)
+            
+        state.append([
+            offset_x,
+            offset_y,
+            self.vel_x / MOVE_SPEED,  # Normalized X velocity
+            self.vel_y / MAX_FALLING_SPEED,  # Normalized Y velocity
+            1.0 if self.on_ground else 0.0  # Ground state
+        ])
+            
         return state
         
-    def agent_step(self, action: int):
+    def step(self, action: int):
         """Executes one agent action and returns result of that action.
         
         Args:
@@ -278,10 +301,23 @@ class Game:
             reward -= 100
             done = True
         if self.game_completed:
-            reward += 100
+            reward += 1000
             done = True
         
-        next_state = self.agent_get_state()
+        
+        # Add distance of player from the finish
+        player_pos = np.array([self.x / TILE_SIZE, self.y / TILE_SIZE])
+        distance = np.linalg.norm(player_pos - self.end_pos)
+        distance_reward = (self.previous_distance - distance) * 0.5
+        reward += distance_reward
+        
+        self.previous_distance = distance
+        
+        
+        # Apply step count
+        reward -= 0.1
+        
+        next_state = self.get_state()
         return next_state, reward, done
         
         

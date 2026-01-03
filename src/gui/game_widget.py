@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QPainter, QPixmap, QFont, QFontMetrics
 from PySide6.QtCore import Qt, QTimer, QSize
 
 from game.game import TILE_SIZE, Game, MovementDirection
+from agent.train import Train
 
 # Colors for tiles
 COLORS = {
@@ -17,17 +18,26 @@ COLORS = {
 
 # Definive cell size for visualisation
 CELL_SIZE = 16
-
+STEPS_PER_FRAME = 2500 # How many steps does the agent move per frame
 
 class MapWidget(QWidget):
     """Widget for visualisation the map and the player"""
 
-    def __init__(self, parent, game: Game):
-        """Initialize the visualisation by loading the sprints, creating UI and movement loop."""
+    def __init__(self, parent, game: Game, agent = False):
+        """Initialize the visualisation by loading the sprints, creating UI and movement loop.
+        
+        Args:
+            game: the game "engine" class
+            agent: if agent should play the game
+        """
+        
         super().__init__(parent)
         self.parent = parent
         self.game = game
 
+        self.agent = agent
+        self.train = Train()
+        
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Store dimensions
@@ -161,6 +171,7 @@ class MapWidget(QWidget):
         # Print Victory / Game over screens
         ui_font = QFont("Courier New", self.cell_size * 1.5)
         painter.setPen(QColor("white"))
+        ui_font.setBold(True)
         painter.setFont(ui_font)
         if self.game.game_completed:
             victory_text = "Victory!"
@@ -170,6 +181,25 @@ class MapWidget(QWidget):
             game_over_text = "Game Over!"
             width_game_over = QFontMetrics(ui_font).horizontalAdvance(game_over_text)
             painter.drawText(self.width() // 2 - width_game_over // 2, self.height() // 2, game_over_text)
+            
+            
+        # Agent debug
+        if self.agent:
+            ui_font = QFont("Courier New", self.cell_size / 1.5)
+            painter.setFont(ui_font)
+            ui_font.setBold(True)
+            painter.setPen(QColor("black"))
+            generation_text = f"Generation: {self.train.generation}"
+            painter.drawText(self.offset_x + width_coin* 10, self.offset_y + self.cell_size, generation_text)
+            painter.setPen(QColor("gold"))
+            painter.drawText(self.offset_x + width_coin * 10 - 2, self.offset_y + self.cell_size - 2, generation_text)
+            
+            painter.setPen(QColor("black"))
+            win_count_text = f"Win Count: {self.train.win_count}"
+            painter.drawText(self.offset_x + width_coin* 12, self.offset_y + self.cell_size, win_count_text)
+            painter.setPen(QColor("gold"))
+            painter.drawText(self.offset_x + width_coin * 12 - 2, self.offset_y + self.cell_size - 2, win_count_text)
+            
 
     def keyPressEvent(self, event):
         """Detects key presses."""
@@ -183,6 +213,13 @@ class MapWidget(QWidget):
     def game_loop(self):
         """Game loop that updates the game state and makes a movement based on pressed keys."""
 
+        # If agent is playing
+        if self.agent:
+            self.train.make_step(step_size = STEPS_PER_FRAME)
+            self.game = self.train.game
+            self.update()
+            return
+        
         # Default move (no move was made)
         move_dir = MovementDirection.IDLE
         
@@ -215,7 +252,7 @@ class MapWidget(QWidget):
 class GameWidget(QWidget):
     """Game widget, that has MapWidget inside of it."""
 
-    def __init__(self, parent, game: Game):
+    def __init__(self, parent, game: Game, agent: False):
         """Initialize Game widget and create visualisation using MapWidget."""
         super().__init__(parent)
         self.parent = parent
@@ -226,6 +263,6 @@ class GameWidget(QWidget):
         self.layout.addStretch()
         self.setLayout(self.layout)
 
-        self.layout.addWidget(MapWidget(self, game))
+        self.layout.addWidget(MapWidget(self, game, agent))
 
         self.game = Game()

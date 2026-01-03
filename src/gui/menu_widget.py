@@ -6,7 +6,6 @@ from PySide6.QtCore import Qt
 from game.game import Game
 from gui.game_widget import GameWidget
 
-
 class MenuWidget(QWidget):
     """Main navigation Menu widget."""
 
@@ -22,7 +21,8 @@ class MenuWidget(QWidget):
         self.game = Game()
 
         # Initialize Game widget
-        self.game_widget = GameWidget(self.parent, self.game)
+        self.game_widget = GameWidget(self.parent, self.game, False)
+        self.game_widget_agent = GameWidget(self.parent, self.game, True)
 
         self.layout = QVBoxLayout()
         self.layout.setSpacing(5)
@@ -41,6 +41,6 @@ class MenuWidget(QWidget):
         self.agent_game_button.setFixedSize(300, 50)
         self.layout.addWidget(self.agent_game_button, alignment=Qt.AlignCenter)
         # TODO Change action
-        self.agent_game_button.clicked.connect(lambda: self.parent.setCentralWidget(self.game_widget))
+        self.agent_game_button.clicked.connect(lambda: self.parent.setCentralWidget(self.game_widget_agent))
 
         self.layout.addStretch()

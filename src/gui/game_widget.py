@@ -196,25 +196,36 @@ class MapWidget(QWidget):
         # Agent debug
         if self.agent:
             ui_font = QFont("Courier New", self.cell_size / 1.5)
-            painter.setFont(ui_font)
             ui_font.setBold(True)
+            painter.setFont(ui_font)
             painter.setPen(QColor("black"))
             generation_text = f"Generation: {self.train.generation}"
-            painter.drawText(self.offset_x + width_coin * 10, self.offset_y + self.cell_size, generation_text)
+
+            painter.drawText(self.offset_x + width_coin * 5, self.offset_y + self.cell_size, generation_text)
             painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 10 - 2, self.offset_y + self.cell_size - 2, generation_text)
+            painter.drawText(self.offset_x + width_coin * 5 - 2, self.offset_y + self.cell_size - 2, generation_text)
 
             painter.setPen(QColor("black"))
             win_count_text = f"Win Count: {self.train.win_count}"
-            painter.drawText(self.offset_x + width_coin * 13, self.offset_y + self.cell_size, win_count_text)
+            painter.drawText(self.offset_x + width_coin * 8, self.offset_y + self.cell_size, win_count_text)
             painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 13 - 2, self.offset_y + self.cell_size - 2, win_count_text)
-            
+            painter.drawText(self.offset_x + width_coin * 8 - 2, self.offset_y + self.cell_size - 2, win_count_text)
+
             painter.setPen(QColor("black"))
-            best_step_count_text = f"Best steps: {self.game.best_step_count}"
-            painter.drawText(self.offset_x + width_coin * 16, self.offset_y + self.cell_size, best_step_count_text)
+            best_step_count_text = f"Least steps: {self.game.best_step_count}"
+            painter.drawText(self.offset_x + width_coin * 11, self.offset_y + self.cell_size, best_step_count_text)
             painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 16 - 2, self.offset_y + self.cell_size - 2, best_step_count_text)
+            painter.drawText(
+                self.offset_x + width_coin * 11 - 2, self.offset_y + self.cell_size - 2, best_step_count_text
+            )
+
+            painter.setPen(QColor("black"))
+            best_distance_text = f"Closest distance: {self.game.total_best_distance:.2f}"
+            painter.drawText(self.offset_x + width_coin * 14, self.offset_y + self.cell_size, best_distance_text)
+            painter.setPen(QColor("gold"))
+            painter.drawText(
+                self.offset_x + width_coin * 14 - 2, self.offset_y + self.cell_size - 2, best_distance_text
+            )
 
     def keyPressEvent(self, event):
         """Detects key presses."""
@@ -230,7 +241,11 @@ class MapWidget(QWidget):
 
         # If agent is playing
         if self.agent:
-            self.train.make_step(step_size=self.steps_per_frame)
+            for _ in range(self.steps_per_frame):
+                self.train.make_one_step()
+                if self.train.done:
+                    break
+
             self.game = self.train.game
             self.update()
             return

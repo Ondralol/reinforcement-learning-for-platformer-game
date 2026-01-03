@@ -12,8 +12,8 @@ class Agent:
         alpha=0.1,
         gamma=0.95,
         epsilon=1.0,
-        epsilon_decay=0.9995,
-        min_epsilon=0.05,
+        epsilon_decay=0.9998,
+        min_epsilon=0.001,
     ):
         """Initialize the agent and saves its arguments for the agents.
 

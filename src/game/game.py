@@ -25,7 +25,7 @@ class MovementDirection(Enum):
 class Game:
     """Defines entire game logic, physics, etc."""
 
-    def __init__(self, map_path: str = "maps/simple_jumps.txt"):
+    def __init__(self, map_path: str = "maps/obstacles.txt"):
         """Initializes game states.
 
         Args:
@@ -37,17 +37,12 @@ class Game:
         self.game_timer = QElapsedTimer()
         self.current_game_time = 0.0
 
-        # Load map
-        self.map = []
-        self.width = 0
-        self.height = 0
-        self.load_map(self.current_map_path)
-        
-        self.find_player_start()
-        
-         # The best amount of steps to reach finish
+        # The best amount of steps to reach finish
         self.best_step_count = float("inf")
-        
+
+        # Total best distance throughout all games
+        self.total_best_distance = float("inf")
+
         # Restart level initially
         self.restart_game()
 
@@ -80,10 +75,18 @@ class Game:
     def restart_game(self):
         """Restarts game."""
 
+        # Load map
+        self.map = []
+        self.width = 0
+        self.height = 0
+        self.load_map(self.current_map_path)
+
+        self.find_player_start()
+
         # Set player state
-        self.x = self.start_x 
+        self.x = self.start_x
         self.y = self.start_y
-        
+
         self.vel_x = 0.0
         self.vel_y = 0.0
         self.on_ground = False
@@ -98,6 +101,7 @@ class Game:
         self.game_timer.start()  # Restarts timer
         self.coins_collected = 0
         self.step_count = 0
+        self.steps_since_progress = 0
 
     def get_formatted_time(self):
         """Formats elapsed time"""
@@ -149,13 +153,13 @@ class Game:
                 self.map[gy][gx] = "."
             elif tile == "E":
                 self.game_completed = True
-                #print("Victory")
+                # print("Victory")
                 if self.steps < self.best_step_count:
                     self.best_step_count = self.steps
                 return
             elif tile == "-":
                 self.game_over = True
-                #print("Game Over")
+                # print("Game Over")
                 return
 
         # Check wall collisions for x axis movement
@@ -242,21 +246,27 @@ class Game:
         self.y += self.vel_y
         self.check_collisions(x_axis=False)
 
-    def get_state(self, size=1):
+    def get_state(self, size=2):
         """Returns simplifed size x size grind around the player
 
         Args:
             size: Size of the grid
         """
+        state = []
 
         # Player's position
         player_x = int(self.x // TILE_SIZE)
         player_y = int(self.y // TILE_SIZE)
 
-        #offset_x = (self.x % TILE_SIZE) / TILE_SIZE
-        #offset_y = (self.y % TILE_SIZE) / TILE_SIZE
+        offset_x = (self.x % TILE_SIZE) / TILE_SIZE
+        # offset_y = (self.y % TILE_SIZE) / TILE_SIZE
 
-        state = []
+        # Player can stand on 1  TILE_SIZE, there is difference if he is on right edge, left edge or in the middle of the tile
+        offset_state = 0
+        if offset_x < 0.5:
+            offset_state = 0  # Left side
+        else:  # Right side
+            offset_state = 1
 
         for y in range(-size, size + 1):
             row = []
@@ -283,19 +293,20 @@ class Game:
             vel_x_dir = 1
         elif self.vel_x < -0.5:
             vel_x_dir = -1
-        
+
         vel_y_dir = 0
         if self.vel_y > 0.5:
             vel_y_dir = 1
         elif self.vel_y < -0.5:
             vel_y_dir = -1
-            
+
         state.append(
             [
-                #offset_x,
-                #offset_y,
-                #self.vel_x / MOVE_SPEED,  # Normalized X velocity
-                #self.vel_y / MAX_FALLING_SPEED,  # Normalized Y velocity
+                # offset_x,
+                # offset_y,
+                # self.vel_x / MOVE_SPEED,  # Normalized X velocity
+                # self.vel_y / MAX_FALLING_SPEED,  # Normalized Y velocity
+                offset_state,
                 vel_x_dir,
                 vel_y_dir,
                 1 if self.on_ground else 0,  # Ground state
@@ -320,10 +331,10 @@ class Game:
         reward = 0
 
         if self.coins_collected > prev_coins:
-            reward += 20
+            reward += 50
 
         done = False
-        
+
         if self.game_over:
             reward = -100
             done = True
@@ -334,17 +345,28 @@ class Game:
             # Add distance of player from the finish
             player_pos_x = self.x / TILE_SIZE
             distance = abs(player_pos_x - self.end_pos[0])
+            diff = self.best_distance - distance
 
-            if distance < self.best_distance:
+            if diff > 0:
                 self.best_distance = distance
-                reward += 2.5
-            
+                self.steps_since_progress = 0
+                reward += diff * 10
+            else:
+                # Punish no progress in long time
+                self.steps_since_progress += 1
+                if self.steps_since_progress >= 175:
+                    reward -= 50
+                    done = True
+
+            if distance < self.total_best_distance:
+                self.total_best_distance = distance
+
             # If player is on the right side of finish flag
             if player_pos_x > self.end_pos[0] + 1:
                 reward -= 5.0
 
-            # Apply step count
-            reward -= 0.1
+            # Penalty for existing
+            reward -= 0.05
 
         next_state = self.get_state()
         return next_state, reward, done

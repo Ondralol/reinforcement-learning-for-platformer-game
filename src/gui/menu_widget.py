@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from game.game import Game
 from gui.game_widget import GameWidget
 
+
 class MenuWidget(QWidget):
     """Main navigation Menu widget."""
 
@@ -17,13 +18,6 @@ class MenuWidget(QWidget):
         super().__init__(parent)
         self.parent = parent
 
-        # Initialize Game
-        self.game = Game()
-
-        # Initialize Game widget
-        self.game_widget = GameWidget(self.parent, self.game, False)
-        self.game_widget_agent = GameWidget(self.parent, self.game, True)
-
         self.layout = QVBoxLayout()
         self.layout.setSpacing(5)
         self.layout.setContentsMargins(25, 25, 25, 25)
@@ -34,13 +28,25 @@ class MenuWidget(QWidget):
         self.play_game_button = QPushButton("Play Game")
         self.play_game_button.setFixedSize(300, 50)
         self.layout.addWidget(self.play_game_button, alignment=Qt.AlignCenter)
-        self.play_game_button.clicked.connect(lambda: self.parent.setCentralWidget(self.game_widget))
+        self.play_game_button.clicked.connect(lambda: self.create_and_show_game(False))
 
         # Second button
         self.agent_game_button = QPushButton("Agent Plays Game")
         self.agent_game_button.setFixedSize(300, 50)
         self.layout.addWidget(self.agent_game_button, alignment=Qt.AlignCenter)
-        # TODO Change action
-        self.agent_game_button.clicked.connect(lambda: self.parent.setCentralWidget(self.game_widget_agent))
+        self.agent_game_button.clicked.connect(lambda: self.create_and_show_game(True))
 
         self.layout.addStretch()
+
+    def create_and_show_game(self, agent):
+        """Creates game widget.
+
+        Args:
+            agent: Whether or not agent plays the game
+        """
+
+        # Initialize Game
+        self.game = Game()
+        game_widget = GameWidget(self.parent, self.game, agent)
+        self.parent.setCentralWidget(game_widget)
+        game_widget.map_widget.setFocus()

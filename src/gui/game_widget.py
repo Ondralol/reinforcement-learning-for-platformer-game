@@ -1,6 +1,6 @@
 """Visualisation of the Game"""
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QSlider, QLabel, QHBoxLayout
 from PySide6.QtGui import QColor, QPainter, QPixmap, QFont, QFontMetrics
 from PySide6.QtCore import Qt, QTimer, QSize
 
@@ -18,26 +18,27 @@ COLORS = {
 
 # Definive cell size for visualisation
 CELL_SIZE = 16
-STEPS_PER_FRAME = 2500 # How many steps does the agent move per frame
+STEPS_PER_FRAME = 1000  # How many steps does the agent move per frame
+
 
 class MapWidget(QWidget):
     """Widget for visualisation the map and the player"""
 
-    def __init__(self, parent, game: Game, agent = False):
+    def __init__(self, parent, game: Game, agent=False):
         """Initialize the visualisation by loading the sprints, creating UI and movement loop.
-        
+
         Args:
             game: the game "engine" class
             agent: if agent should play the game
         """
-        
+
         super().__init__(parent)
         self.parent = parent
         self.game = game
 
         self.agent = agent
         self.train = Train()
-        
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Store dimensions
@@ -65,7 +66,6 @@ class MapWidget(QWidget):
         self.scaled_player = None
         self.scaled_flag = None
         self.scaled_void = None
-        
 
         # Focus window
         self.setFocusPolicy(Qt.StrongFocus)
@@ -81,6 +81,18 @@ class MapWidget(QWidget):
         self.game_timer = QTimer()
         self.game_timer.timeout.connect(self.game_loop)
         self.game_timer.start(16)  # 60fps
+
+        # Set agent's steps per frame to a default value
+        self.steps_per_frame = STEPS_PER_FRAME
+
+    def update_step_size(self, val: int):
+        """Updates agent's step size.
+
+        Args:
+            val: Value that the agent's speed is updated to
+        """
+
+        self.steps_per_frame = val
 
     def recalculate_scale(self):
         """Calculates new scales based on window size."""
@@ -111,13 +123,12 @@ class MapWidget(QWidget):
 
         self.scaled_player = self.player.scaled(self.cell_size, self.cell_size * 2)
         self.scaled_flag = self.flag.scaled(self.cell_size, self.cell_size * 2)
-        
 
     def resizeEvent(self, event):
         """Recalculate scale factor upon resizing."""
         self.recalculate_scale()
         super().resizeEvent(event)
-    
+
     def paintEvent(self, _event):
         """Re-renders the whole game widget"""
 
@@ -148,26 +159,26 @@ class MapWidget(QWidget):
         player_y = self.offset_y + int(self.game.y * scale_factor)
         # print(f"Current player coordinates: ({player_x}, {player_y})")
         painter.drawPixmap(player_x, player_y, self.scaled_player)
-        
-        
+
         # Draw Stats
         ui_font = QFont("Courier New", self.cell_size / 1.5)
         ui_font.setBold(True)
         painter.setFont(ui_font)
-        
+
         coin_text = f"Coins: {self.game.coins_collected}"
         width_coin = QFontMetrics(ui_font).horizontalAdvance(coin_text)
         time_text = f"Time:  {self.game.get_formatted_time()}"
 
-        
         painter.setPen(QColor("black"))
         painter.drawText(self.offset_x + self.cell_size, self.offset_y + self.cell_size, coin_text)
         painter.drawText(self.offset_x + self.cell_size + width_coin * 1.5, self.offset_y + self.cell_size, time_text)
-        
+
         painter.setPen(QColor("gold"))
         painter.drawText(self.offset_x + self.cell_size - 2, self.offset_y + self.cell_size - 2, coin_text)
-        painter.drawText(self.offset_x + self.cell_size + width_coin * 1.5 - 2, self.offset_y + self.cell_size - 2, time_text)
-        
+        painter.drawText(
+            self.offset_x + self.cell_size + width_coin * 1.5 - 2, self.offset_y + self.cell_size - 2, time_text
+        )
+
         # Print Victory / Game over screens
         ui_font = QFont("Courier New", self.cell_size * 1.5)
         painter.setPen(QColor("white"))
@@ -181,8 +192,7 @@ class MapWidget(QWidget):
             game_over_text = "Game Over!"
             width_game_over = QFontMetrics(ui_font).horizontalAdvance(game_over_text)
             painter.drawText(self.width() // 2 - width_game_over // 2, self.height() // 2, game_over_text)
-            
-            
+
         # Agent debug
         if self.agent:
             ui_font = QFont("Courier New", self.cell_size / 1.5)
@@ -190,16 +200,15 @@ class MapWidget(QWidget):
             ui_font.setBold(True)
             painter.setPen(QColor("black"))
             generation_text = f"Generation: {self.train.generation}"
-            painter.drawText(self.offset_x + width_coin* 10, self.offset_y + self.cell_size, generation_text)
+            painter.drawText(self.offset_x + width_coin * 10, self.offset_y + self.cell_size, generation_text)
             painter.setPen(QColor("gold"))
             painter.drawText(self.offset_x + width_coin * 10 - 2, self.offset_y + self.cell_size - 2, generation_text)
-            
+
             painter.setPen(QColor("black"))
             win_count_text = f"Win Count: {self.train.win_count}"
-            painter.drawText(self.offset_x + width_coin* 12, self.offset_y + self.cell_size, win_count_text)
+            painter.drawText(self.offset_x + width_coin * 14, self.offset_y + self.cell_size, win_count_text)
             painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 12 - 2, self.offset_y + self.cell_size - 2, win_count_text)
-            
+            painter.drawText(self.offset_x + width_coin * 14 - 2, self.offset_y + self.cell_size - 2, win_count_text)
 
     def keyPressEvent(self, event):
         """Detects key presses."""
@@ -215,16 +224,16 @@ class MapWidget(QWidget):
 
         # If agent is playing
         if self.agent:
-            self.train.make_step(step_size = STEPS_PER_FRAME)
+            self.train.make_step(step_size=self.steps_per_frame)
             self.game = self.train.game
             self.update()
             return
-        
+
         # Default move (no move was made)
         move_dir = MovementDirection.IDLE
-        
+
         # Movement positions
-        
+
         # Jump
         if (Qt.Key_W in self.pressed_keys or Qt.Key_Space in self.pressed_keys) and self.game.on_ground:
             move_dir = MovementDirection.JUMP
@@ -260,9 +269,49 @@ class GameWidget(QWidget):
         self.layout = QVBoxLayout()
         self.layout.setSpacing(5)
         self.layout.setContentsMargins(25, 25, 25, 25)
-        self.layout.addStretch()
         self.setLayout(self.layout)
 
-        self.layout.addWidget(MapWidget(self, game, agent))
+        self.map_widget = MapWidget(self, game, agent)
 
+        # Add agent controls
+        if agent:
+            self.add_controls()
+
+        self.layout.addWidget(self.map_widget)
+        self.layout.addStretch()
         self.game = Game()
+
+    def add_controls(self):
+        """Adds slider to change the agent's steps_per_frame."""
+
+        controls_widget = QWidget()
+        controls_layout = QHBoxLayout()
+        self.speed_label = QLabel(f"Speed: {self.map_widget.steps_per_frame}")
+        self.speed_label.setStyleSheet("color: white; font-weight: bold; font-family: Courier New;")
+
+        # Create slider
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(5000)  # Might crash application if it's too high because it takes too long to compute
+        self.slider.setValue(self.map_widget.steps_per_frame)
+
+        # Connect slider to a function that updates speed
+        self.slider.valueChanged.connect(self.update_step_size_ui)
+
+        controls_layout.addWidget(QLabel("Slow", parent=self))
+        controls_layout.addWidget(self.slider)
+        controls_layout.addWidget(QLabel("Fast", parent=self))
+        controls_layout.addWidget(self.speed_label)
+
+        controls_widget.setLayout(controls_layout)
+
+        self.layout.addWidget(controls_widget)
+
+    def update_step_size_ui(self, val: int):
+        """Updates steps size UI and value.
+
+        Args:
+            val: Value that the agent's speed is updated to
+        """
+        self.speed_label.setText(f"Speed: {val}")
+        self.map_widget.update_step_size(val)

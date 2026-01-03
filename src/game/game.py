@@ -1,7 +1,8 @@
 """This file includes the entire game logic/physics"""
+
 from enum import Enum
 
-from PySide6.QtCore import QElapsedTimer 
+from PySide6.QtCore import QElapsedTimer
 import numpy as np
 
 TILE_SIZE = 32  # 32 pixels in one block
@@ -24,17 +25,25 @@ class MovementDirection(Enum):
 class Game:
     """Defines entire game logic, physics, etc."""
 
-    def __init__(self, map_path: str = "maps/default1.txt"):
+    def __init__(self, map_path: str = "maps/default.txt"):
         """Initializes game states.
 
         Args:
             map_path: Path to txt file containing map of the level
         """
-        
+
         self.current_map_path = map_path
         # Set timer
         self.game_timer = QElapsedTimer()
         self.current_game_time = 0.0
+
+        # Load map
+        self.map = []
+        self.width = 0
+        self.height = 0
+        self.load_map(self.current_map_path)
+        
+        self.find_player_start()
         
         # Restart level initially
         self.restart_game()
@@ -49,9 +58,9 @@ class Game:
 
     def find_player_start(self):
         """Finds player's starting position on the map."""
-        
+
         self.end_pos = np.array([0, 0])
-        
+
         for y, row in enumerate(self.map):
             for x, cell in enumerate(row):
                 # If cell is Starting position
@@ -59,49 +68,42 @@ class Game:
                     # Replace position with Air
                     self.map[y][x] = "."
                     # Represents players feet position in sub-cell coordinates, this allows for more precise movement
-                    self.x = TILE_SIZE * x
-                    self.y = TILE_SIZE * y
-                    return
+                    self.start_x = TILE_SIZE * x
+                    self.start_y = TILE_SIZE * y
                 # Mark End coordinates
                 if cell == "E":
                     self.end_pos = np.array([x, y])
 
     def restart_game(self):
         """Restarts game."""
-        
-        # Load map
-        self.map = []
-        self.width = 0
-        self.height = 0
-        self.load_map(self.current_map_path)
 
         # Set player state
-        self.x = 0.0
-        self.y = 0.0
+        self.x = self.start_x 
+        self.y = self.start_y
+        
         self.vel_x = 0.0
         self.vel_y = 0.0
         self.on_ground = False
         self.game_completed = False
         self.game_over = False
-        self.find_player_start()
-        
-        player_pos = np.array([self.x / TILE_SIZE, self.y / TILE_SIZE])
-        self.previous_distance = np.linalg.norm(player_pos - self.end_pos)
-        
+        self.steps = 0
+
+        player_pos_x = self.x / TILE_SIZE
+        self.best_distance = abs(player_pos_x - self.end_pos[0])
+
         # Stats
-        self.game_timer.start() # Restarts timer
+        self.game_timer.start()  # Restarts timer
         self.coins_collected = 0
         self.step_count = 0
-    
+
     def get_formatted_time(self):
         """Formats elapsed time"""
-        
+
         seconds = (self.current_game_time // 1000) % 60
         minutes = self.current_game_time // 60000
-        
+
         return f"{minutes:02}:{seconds:02}"
-            
-    
+
     def get_tile(self, x, y):
         """Return tile on map based on x, y coordinates"""
         if 0 <= y < self.height and 0 <= x < self.width:
@@ -199,10 +201,13 @@ class Game:
         # If level is finished (successfully) or game is over (player died), make no additional move
         if self.game_completed or self.game_over:
             return
-        
+
         # Update time
         self.current_game_time = self.game_timer.elapsed()
-        
+
+        # Update steps
+        self.steps += 1
+
         # Apply horizontal input
         if move == MovementDirection.LEFT:
             self.vel_x = -MOVE_SPEED
@@ -231,27 +236,27 @@ class Game:
         self.check_collisions(x_axis=True)
         self.y += self.vel_y
         self.check_collisions(x_axis=False)
-        
-    def get_state(self, size = 5):
+
+    def get_state(self, size=1):
         """Returns simplifed size x size grind around the player
-        
+
         Args:
             size: Size of the grid
-        """    
-        
+        """
+
         # Player's position
         player_x = int(self.x // TILE_SIZE)
         player_y = int(self.y // TILE_SIZE)
-        
-        offset_x = (self.x % TILE_SIZE) / TILE_SIZE
-        offset_y = (self.y % TILE_SIZE) / TILE_SIZE
-        
+
+        #offset_x = (self.x % TILE_SIZE) / TILE_SIZE
+        #offset_y = (self.y % TILE_SIZE) / TILE_SIZE
+
         state = []
-        
-        for y in range(-2, 3):
+
+        for y in range(-size, size + 1):
             row = []
-            for x in range(-2, 3):
-                tile = self.get_tile(player_x + x, player_y + y) 
+            for x in range(-size, size + 1):
+                tile = self.get_tile(player_x + x, player_y + y)
                 # Barrier
                 if tile in ("#", "X"):
                     row.append(1)
@@ -267,57 +272,70 @@ class Game:
                 else:
                     row.append(0)
             state.append(row)
-            
-        state.append([
-            offset_x,
-            offset_y,
-            self.vel_x / MOVE_SPEED,  # Normalized X velocity
-            self.vel_y / MAX_FALLING_SPEED,  # Normalized Y velocity
-            1.0 if self.on_ground else 0.0  # Ground state
-        ])
-            
-        return state
+
+        vel_x_dir = 0
+        if self.vel_x > 0.5:
+            vel_x_dir = 1
+        elif self.vel_x < -0.5:
+            vel_x_dir = -1
         
+        vel_y_dir = 0
+        if self.vel_y > 0.5:
+            vel_y_dir = 1
+        elif self.vel_y < -0.5:
+            vel_y_dir = -1
+            
+        state.append(
+            [
+                #offset_x,
+                #offset_y,
+                #self.vel_x / MOVE_SPEED,  # Normalized X velocity
+                #self.vel_y / MAX_FALLING_SPEED,  # Normalized Y velocity
+                vel_x_dir,
+                vel_y_dir,
+                1 if self.on_ground else 0,  # Ground state
+            ]
+        )
+
+        return state
+
     def step(self, action: int):
         """Executes one agent action and returns result of that action.
-        
+
         Args:
             action: Type of action (0, 1, 2, etc..)
         """
-        
+
         # Previously collected coins
         prev_coins = self.coins_collected
-        
+
         # Make a move
         self.update(MovementDirection(action))
-        
+
         reward = 0
-        
+
         if self.coins_collected > prev_coins:
-            reward += 10
-            
+            reward += 20
+
         done = False
+        
         if self.game_over:
-            reward -= 100
+            reward = -100
             done = True
-        if self.game_completed:
-            reward += 1000
+        elif self.game_completed:
+            reward = 500
             done = True
-        
-        
-        # Add distance of player from the finish
-        player_pos = np.array([self.x / TILE_SIZE, self.y / TILE_SIZE])
-        distance = np.linalg.norm(player_pos - self.end_pos)
-        distance_reward = (self.previous_distance - distance) * 0.5
-        reward += distance_reward
-        
-        self.previous_distance = distance
-        
-        
-        # Apply step count
-        reward -= 0.1
-        
+        else:
+            # Add distance of player from the finish
+            player_pos_x = self.x / TILE_SIZE
+            distance = abs(player_pos_x - self.end_pos[0])
+
+            if distance < self.best_distance:
+                self.best_distance = distance
+                reward += 0.5 * 1000
+
+            # Apply step count
+            reward -= 0.1
+
         next_state = self.get_state()
         return next_state, reward, done
-        
-        

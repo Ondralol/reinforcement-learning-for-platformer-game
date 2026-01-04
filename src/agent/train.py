@@ -91,6 +91,7 @@ class Train:
             )
             self.training_state.skip_counter = 0
 
+        # If max steps reached or game ended
         if (
             self.game.game_state.steps > self.config.max_steps
             or self.game.game_state.game_completed

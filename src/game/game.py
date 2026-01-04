@@ -40,8 +40,8 @@ class PlayerState:
 
 
 @dataclass
-class PersistantStates:
-    """Defines persistant stats"""
+class PersistentStates:
+    """Defines persistent stats"""
 
     config: Config
     total_best_distance: float = float("inf")
@@ -112,7 +112,7 @@ class Game:
         # Set timer
         self.game_timer = QElapsedTimer()
 
-        self.persistant_states = PersistantStates(config=config)
+        self.persistant_states = PersistentStates(config=config)
         self.game_state = GameState()
         self.player_state = PlayerState()
         self.map_state = MapState()
@@ -392,7 +392,7 @@ class Game:
             reward += 50
 
         done = False
-
+        # Reward based on win/death
         if self.game_state.game_over:
             reward = -100
             done = True

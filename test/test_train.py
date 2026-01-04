@@ -7,7 +7,7 @@ from utils.args_config import Config
 
 @pytest.fixture
 def train():
-    return Train(Config("maps/test_simple.txt", 2, 1500))
+    return Train(Config("test/maps/test_simple.txt", 2, 1500))
 
 
 class TestTrain:

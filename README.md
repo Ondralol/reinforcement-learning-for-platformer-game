@@ -9,7 +9,7 @@ I built a simple 2D platformer game and then implemented a Q-learning reinforcem
 
 ### Install dependencies
 ```
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 ### Run the application
@@ -23,7 +23,8 @@ Upon opening the application, user can choose to either play the game (testing p
 #### Player mode
 - User can use `WASD` and `JUMP` to control the game and `R` to restart the game
 #### Agent mode
-- User can watch the agent learn and change the agent training speed. Statistics about the agent are also shown.
+- User can watch the agent learn and change the agent training speed. Statistics about the agent are also shown. 
+Note: Let the agent train for at least 20-35K generations to see good results.
 
 ### Map format
 User can create their own maps and add them in `maps/` folder. The maps must be **rectangular** and maps that are either too small or too large maps might cause issues. \

@@ -48,7 +48,6 @@ class Agent:
         """
         # Store parameters
         self.parameters = params
-        print(self.parameters.visibility_range)
         # Map that stores state and value for every movement at that state
         self.q_table = {}
 

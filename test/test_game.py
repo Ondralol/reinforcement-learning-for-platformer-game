@@ -12,18 +12,18 @@ from utils.args_config import Config
 @pytest.fixture
 def game_simple():
     """Creates a game with simple map."""
-    return Game(Config("maps/test_simple.txt", 2, 1500))
+    return Game(Config("test/maps/test_simple.txt", 2, 1500))
 
 
 @pytest.fixture
 def game_coin():
     """Creates a game with coin map."""
-    return Game(Config("maps/test_coin.txt", 2, 1500))
+    return Game(Config("test/maps/test_coin.txt", 2, 1500))
 
 @pytest.fixture
 def game_void():
     """Creates a game with void map."""
-    return Game(Config("maps/test_void.txt", 2, 1500))
+    return Game(Config("test/maps/test_void.txt", 2, 1500))
 
 
 

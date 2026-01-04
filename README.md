@@ -33,7 +33,7 @@ Format of the tiles is as follows:
 `#` Grass \
 `X` = Dirt \
 `.` = Air \
-`*` = Coin \ 
+`*` = Coin \
 `-` = Void
 
 ### CLI Arguments
@@ -57,7 +57,6 @@ For some reason, when running Pylint inside CI/CD there are PySide import errors
 ```
 pylint src/
 ```
-Note: Because I'm building a game with a lot of physics and also an agent that accepts a lot of arguments, I had to disable a few unnecessary Pylint codes. A high number of parameters is common for both Machine Learning models and complex Game class constructors. A higher branching factor is also necessary due to collision detection and splitting logic into multiple functions would only cause code duplications, more parameters and possible errors.
 
 ### Run tests
 ```

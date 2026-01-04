@@ -18,11 +18,6 @@ generated-members = [
 disable = [
             "C0301", 
             "C0103",
-            "R0912", # (Too many branches) Collision logic is branch heavy, by splitting it it would I would have to pass too many arguments
-            "R0914", # (Too many local variables) Physics computation require many variables
-            "R0913", # (Too many arguments) Many hyperparameters for Agent
-            "R0917",  # (Too many positional arguments) Standard for Machine Learning models 
-            "R0902" # (Too many instan attributes) Standard for complex __init__ methods especially for games where there is a lot of states  
             ] 
 
 [tool.pylint.FORMAT]

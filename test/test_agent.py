@@ -1,13 +1,15 @@
 """Unit tests for Agent"""
 
 import pytest
-from agent.agent import Agent
+from agent.agent import Agent, Transition, Parameters
 
 
 @pytest.fixture
 def agent():
     """Create a basic agent instance."""
-    return Agent()
+    return Agent(
+        Parameters(action_space_size=4, alpha=0.2, epsilon=1.0, gamma=0.999, epsilon_decay=0.99, min_epsilon=0.001)
+    )
 
 
 @pytest.fixture
@@ -19,18 +21,20 @@ def simple_state():
 class TestAgent:
 
     def test_agent_initializes(self, agent):
-        assert agent.action_space_size == 4
-        assert agent.epsilon == 1.0
+        assert agent.parameters.action_space_size == 4
+        assert agent.parameters.epsilon == 1.0
         assert agent.q_table == {}
 
     def test_custom_parameters(self):
-        agent = Agent(action_space_size=3, alpha=0.2, epsilon=0.5, gamma=0.999, epsilon_decay=4, min_epsilon=200)
-        assert agent.action_space_size == 3
-        assert agent.alpha == 0.2
-        assert agent.epsilon == 0.5
-        assert agent.gamma == 0.999
-        assert agent.epsilon_decay == 4
-        assert agent.min_epsilon == 200
+        agent = Agent(
+            Parameters(action_space_size=3, alpha=0.2, epsilon=0.5, gamma=0.999, epsilon_decay=4, min_epsilon=200)
+        )
+        assert agent.parameters.action_space_size == 3
+        assert agent.parameters.alpha == 0.2
+        assert agent.parameters.epsilon == 0.5
+        assert agent.parameters.gamma == 0.999
+        assert agent.parameters.epsilon_decay == 4
+        assert agent.parameters.min_epsilon == 200
 
     def test_get_get_state_key(self, agent, simple_state):
         key1 = agent.get_state_key(simple_state)
@@ -51,7 +55,7 @@ class TestAgent:
         assert 0 <= action < 4  # This will fail if we add more actions
 
     def test_zero_epsilon_chooses_best_action(self, agent, simple_state):
-        agent.epsilon = 0.0
+        agent.parameters.epsilon = 0.0
         state_key = agent.get_state_key(simple_state)
         agent.q_table[state_key] = [1.0, 5.0, 2.0, 3.0]
 
@@ -64,7 +68,7 @@ class TestLearn:
     def test_learn_creates_q_table_entry(self, agent, simple_state):
         next_state = [[1, 1], [0, 0], [1, 1], [1, 0, 0, 0]]
 
-        agent.learn(simple_state, action=2, reward=10, next_state=next_state, done=False)
+        agent.learn(Transition(action=2, state=simple_state, reward=10, next_state=next_state, done=False))
 
         state_key = agent.get_state_key(simple_state)
         assert state_key in agent.q_table
@@ -72,7 +76,7 @@ class TestLearn:
     def test_learn_updates_q_value(self, agent, simple_state):
         next_state = [[0, 0], [0, 0], [0, 0], [0]]
 
-        agent.learn(simple_state, action=1, reward=100, next_state=next_state, done=True)
+        agent.learn(Transition(action=1, state=simple_state, reward=10, next_state=next_state, done=False))
 
         state_key = agent.get_state_key(simple_state)
         assert agent.q_table[state_key][1] > 0
@@ -81,14 +85,14 @@ class TestLearn:
 class TestEpsilonDecay:
 
     def test_decay_reduces_epsilon(self, agent):
-        initial = agent.epsilon
+        initial = agent.parameters.epsilon
         agent.decay_epsilon()
-        assert agent.epsilon < initial
+        assert agent.parameters.epsilon < initial
 
     def test_decay_respects_minimum(self, agent):
-        agent.epsilon = agent.min_epsilon
+        agent.parameters.epsilon = agent.parameters.min_epsilon
         agent.decay_epsilon()
-        assert agent.epsilon == agent.min_epsilon
+        assert agent.parameters.epsilon == agent.parameters.min_epsilon
 
 
 class TestSaveLoad:
@@ -100,7 +104,9 @@ class TestSaveLoad:
         agent.q_table[state_key] = [1.0, 2.0, 3.0, 4.0]
         agent.save_file(str(filename))
 
-        new_agent = Agent()
+        new_agent = Agent(
+            Parameters(action_space_size=3, alpha=0.2, epsilon=0.5, gamma=0.999, epsilon_decay=4, min_epsilon=200)
+        )
         new_agent.load_file(str(filename))
 
         assert new_agent.q_table[state_key] == [1.0, 2.0, 3.0, 4.0]

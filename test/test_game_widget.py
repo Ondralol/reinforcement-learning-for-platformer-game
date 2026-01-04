@@ -54,10 +54,10 @@ class TestMapWidgetGameLoop:
 
     def test_game_loop_player_playing_makes_progress(self, map_widget_player):
         # Makes a move to the right
-        prev_x = map_widget_player.game.x
+        prev_x = map_widget_player.game.player_state.x
         map_widget_player.pressed_keys.add(Qt.Key_D)
         map_widget_player.game_loop()
         map_widget_player.game_loop()
         map_widget_player.game_loop()
 
-        assert prev_x != map_widget_player.game.x
+        assert prev_x != map_widget_player.game.player_state.x

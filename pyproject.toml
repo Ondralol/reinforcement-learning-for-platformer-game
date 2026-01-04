@@ -14,7 +14,7 @@ generated-members = [
 ]
 
 [tool.pylint."MESSAGES CONTROL"]
-# Even without these I get score 9.5/10 either way
+# Without disabling these the score is 9.80/10 (Note: Qt fails on pylint, but these are false positives)
 disable = [
             "C0301", 
             "C0103",

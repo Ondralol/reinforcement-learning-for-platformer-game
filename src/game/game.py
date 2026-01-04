@@ -79,7 +79,7 @@ class MapState:
     height: int = 0
     start_x: int = 0
     start_y: int = 0
-    end_pos: np.array = np.array([0, 0])
+    end_pos: np.ndarray = field(default_factory=lambda: np.array([0, 0]))
 
 
 @dataclass

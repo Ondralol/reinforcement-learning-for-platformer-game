@@ -11,6 +11,7 @@ FRAME_SKIP = 4  # How many frames does the agent hold a key
 
 class Train:
     """Training class that controls how the Agent trains"""
+
     def __init__(self, config: Config):
         """Initializes the training process.
 

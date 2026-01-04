@@ -1,6 +1,7 @@
 # Topic of your semestral work
 
-Describe a function of developed application, necessary dependencies (e.g. utilize requirements.txt), how to start it, and last but not least how to run tests from CLI.
+# Note for pylint in CI/CD 
+For some reason, Pylint cannot see PySide import, this happened to me in CLI as well but I managed to fix it there. These errors are false positives and should be completely ignored
 
 ## Documentation
 Use `PYTHONPATH=src pdoc ./src -o ./docs` and then find docs in `docs/index.html`.

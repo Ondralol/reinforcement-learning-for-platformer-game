@@ -133,7 +133,7 @@ class MapWidget(QWidget):
 
     def paint_agent_stats(self, painter, width):
         """Draws agents statistics
-        
+
         Args:
             painter: Qt painter reference
             width: Reference with (kinda dumb idc)
@@ -159,17 +159,13 @@ class MapWidget(QWidget):
         best_step_count_text = f"Least steps: {self.game.best_step_count}"
         painter.drawText(self.offset_x + width * 11, self.offset_y + self.cell_size, best_step_count_text)
         painter.setPen(QColor("gold"))
-        painter.drawText(
-            self.offset_x + width * 11 - 2, self.offset_y + self.cell_size - 2, best_step_count_text
-        )
+        painter.drawText(self.offset_x + width * 11 - 2, self.offset_y + self.cell_size - 2, best_step_count_text)
 
         painter.setPen(QColor("black"))
         best_distance_text = f"Closest distance: {self.game.total_best_distance:.2f}"
         painter.drawText(self.offset_x + width * 14, self.offset_y + self.cell_size, best_distance_text)
         painter.setPen(QColor("gold"))
-        painter.drawText(
-            self.offset_x + width * 14 - 2, self.offset_y + self.cell_size - 2, best_distance_text
-        )
+        painter.drawText(self.offset_x + width * 14 - 2, self.offset_y + self.cell_size - 2, best_distance_text)
 
     def paintEvent(self, _event):
         """Re-renders the whole game widget"""

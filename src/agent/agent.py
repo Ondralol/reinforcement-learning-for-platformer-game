@@ -6,6 +6,7 @@ import pickle
 
 class Agent:
     """Agent class that handles learning how to play the game"""
+
     def __init__(
         self,
         action_space_size=4,

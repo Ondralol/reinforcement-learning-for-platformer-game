@@ -5,12 +5,13 @@ from PySide6.QtWidgets import QMainWindow, QApplication
 from gui.menu_widget import MenuWidget
 from utils.args_config import Config
 
+
 class MainWindow(QMainWindow):
     """Main Application window."""
 
     def __init__(self, app: QApplication, config: Config):
         """Initialize window size, title, maximazes window and sets Menu widget as the main widget.
-        
+
         Arguments:
             config: CLI Arguments
         """

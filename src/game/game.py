@@ -44,6 +44,27 @@ class Game:
         # Total best distance throughout all games
         self.total_best_distance = float("inf")
 
+        # Set game states
+        self.steps_since_progress = float("inf")
+        self.best_distance = float("inf")
+        self.game_completed = False
+        self.game_over = False
+
+        # Set player states
+        self.on_ground = False
+        self.vel_x = 0
+        self.vel_y = 0
+        self.x = 0
+        self.y = 0
+
+        # Map states
+        self.map = []
+        self.width = 0
+        self.height = 0
+        self.start_x = 0
+        self.start_y = 0
+        self.end_pos = np.array([0, 0])
+
         # Restart level initially
         self.restart_game()
 
@@ -155,8 +176,7 @@ class Game:
             elif tile == "E":
                 self.game_completed = True
                 # print("Victory")
-                if self.steps < self.best_step_count:
-                    self.best_step_count = self.steps
+                self.best_step_count = min(self.best_step_count, self.steps)
                 return
             elif tile == "-":
                 self.game_over = True
@@ -359,8 +379,7 @@ class Game:
                     reward -= 50
                     done = True
 
-            if distance < self.total_best_distance:
-                self.total_best_distance = distance
+            self.total_best_distance = min(self.total_best_distance, distance)
 
             # If player is on the right side of finish flag
             if player_pos_x > self.end_pos[0] + 1:

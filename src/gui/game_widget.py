@@ -131,6 +131,46 @@ class MapWidget(QWidget):
         self.recalculate_scale()
         super().resizeEvent(event)
 
+    def paint_agent_stats(self, painter, width):
+        """Draws agents statistics
+        
+        Args:
+            painter: Qt painter reference
+            width: Reference with (kinda dumb idc)
+        """
+
+        ui_font = QFont("Courier New", self.cell_size / 1.5)
+        ui_font.setBold(True)
+        painter.setFont(ui_font)
+        painter.setPen(QColor("black"))
+        generation_text = f"Generation: {self.train.generation}"
+
+        painter.drawText(self.offset_x + width * 5, self.offset_y + self.cell_size, generation_text)
+        painter.setPen(QColor("gold"))
+        painter.drawText(self.offset_x + width * 5 - 2, self.offset_y + self.cell_size - 2, generation_text)
+
+        painter.setPen(QColor("black"))
+        win_count_text = f"Win Count: {self.train.win_count}"
+        painter.drawText(self.offset_x + width * 8, self.offset_y + self.cell_size, win_count_text)
+        painter.setPen(QColor("gold"))
+        painter.drawText(self.offset_x + width * 8 - 2, self.offset_y + self.cell_size - 2, win_count_text)
+
+        painter.setPen(QColor("black"))
+        best_step_count_text = f"Least steps: {self.game.best_step_count}"
+        painter.drawText(self.offset_x + width * 11, self.offset_y + self.cell_size, best_step_count_text)
+        painter.setPen(QColor("gold"))
+        painter.drawText(
+            self.offset_x + width * 11 - 2, self.offset_y + self.cell_size - 2, best_step_count_text
+        )
+
+        painter.setPen(QColor("black"))
+        best_distance_text = f"Closest distance: {self.game.total_best_distance:.2f}"
+        painter.drawText(self.offset_x + width * 14, self.offset_y + self.cell_size, best_distance_text)
+        painter.setPen(QColor("gold"))
+        painter.drawText(
+            self.offset_x + width * 14 - 2, self.offset_y + self.cell_size - 2, best_distance_text
+        )
+
     def paintEvent(self, _event):
         """Re-renders the whole game widget"""
 
@@ -197,37 +237,7 @@ class MapWidget(QWidget):
 
         # Agent debug
         if self.agent:
-            ui_font = QFont("Courier New", self.cell_size / 1.5)
-            ui_font.setBold(True)
-            painter.setFont(ui_font)
-            painter.setPen(QColor("black"))
-            generation_text = f"Generation: {self.train.generation}"
-
-            painter.drawText(self.offset_x + width_coin * 5, self.offset_y + self.cell_size, generation_text)
-            painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 5 - 2, self.offset_y + self.cell_size - 2, generation_text)
-
-            painter.setPen(QColor("black"))
-            win_count_text = f"Win Count: {self.train.win_count}"
-            painter.drawText(self.offset_x + width_coin * 8, self.offset_y + self.cell_size, win_count_text)
-            painter.setPen(QColor("gold"))
-            painter.drawText(self.offset_x + width_coin * 8 - 2, self.offset_y + self.cell_size - 2, win_count_text)
-
-            painter.setPen(QColor("black"))
-            best_step_count_text = f"Least steps: {self.game.best_step_count}"
-            painter.drawText(self.offset_x + width_coin * 11, self.offset_y + self.cell_size, best_step_count_text)
-            painter.setPen(QColor("gold"))
-            painter.drawText(
-                self.offset_x + width_coin * 11 - 2, self.offset_y + self.cell_size - 2, best_step_count_text
-            )
-
-            painter.setPen(QColor("black"))
-            best_distance_text = f"Closest distance: {self.game.total_best_distance:.2f}"
-            painter.drawText(self.offset_x + width_coin * 14, self.offset_y + self.cell_size, best_distance_text)
-            painter.setPen(QColor("gold"))
-            painter.drawText(
-                self.offset_x + width_coin * 14 - 2, self.offset_y + self.cell_size - 2, best_distance_text
-            )
+            self.paint_agent_stats(painter, width_coin)
 
     def keyPressEvent(self, event):
         """Detects key presses."""
@@ -286,7 +296,7 @@ class GameWidget(QWidget):
 
     def __init__(self, parent, game: Game, agent: False, config: Config):
         """Initialize Game widget and create visualisation using MapWidget.
-        
+
         Arguments:
             game: Game class
             agent: IF agent should play the game or not

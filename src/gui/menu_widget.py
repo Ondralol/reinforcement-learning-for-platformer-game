@@ -7,6 +7,7 @@ from game.game import Game
 from gui.game_widget import GameWidget
 from utils.args_config import Config
 
+
 class MenuWidget(QWidget):
     """Main navigation Menu widget."""
 
@@ -14,7 +15,7 @@ class MenuWidget(QWidget):
         """Initialize Menu widget.
 
         Create "Play Game" and "Agent Plays Game" buttons"
-        
+
         Arguments:
             config: CLI Arguments
         """

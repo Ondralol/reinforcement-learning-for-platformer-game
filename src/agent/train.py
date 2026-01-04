@@ -5,14 +5,15 @@ from agent.agent import Agent
 from utils.args_config import Config
 
 GENERATIONS = 100000
-#MAX_STEPS = 1500 # 1500 is the best for normal sized maps // Deprecated
+# MAX_STEPS = 1500 # 1500 is the best for normal sized maps // Deprecated
 FRAME_SKIP = 4  # How many frames does the agent hold a key
 
 
 class Train:
+    """Training class that controls how the Agent trains"""
     def __init__(self, config: Config):
         """Initializes the training process.
-        
+
         Arguments:
             config: CLI Arguments
         """
@@ -27,9 +28,12 @@ class Train:
         self.win_count = 0
         self.skip_counter = 0
 
+        self.accumulated_reward = 0
+        self.action_idx = 0
+
     def reset(self):
         """Resets the training.
-        
+
         Reset all states, updates epsilon value and restarts the game
         """
         # Might seem like duplication, but we don't initially decay the epsilon

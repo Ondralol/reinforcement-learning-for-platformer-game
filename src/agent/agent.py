@@ -5,6 +5,7 @@ import pickle
 
 
 class Agent:
+    """Agent class that handles learning how to play the game"""
     def __init__(
         self,
         action_space_size=4,
@@ -78,6 +79,7 @@ class Agent:
         return random.choice(options)
 
     def learn(self, state, action, reward, next_state, done):
+        """Update best values for a action at a specific state."""
 
         state_key = self.get_state_key(state)
         next_state_key = self.get_state_key(next_state)
@@ -110,7 +112,7 @@ class Agent:
 
     def save_file(self, filename="agent_data.pkl"):
         """Saves the qtable to a file.
-        
+
         Currently not used, in future it can be used to save the best moves
         """
         with open(filename, "wb") as f:
@@ -118,7 +120,7 @@ class Agent:
 
     def load_file(self, filename="agent_data.pkl"):
         """Loads the qtable from a file.
-        
+
         Currently not used, in future it can be used to load the best moves that agent has previously learned
         """
         try:

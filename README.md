@@ -31,7 +31,7 @@ User can create their own maps and add them in `maps/` folder. The maps must be 
 Format of the tiles is as follows:
 `S` = Start \
 `E` = End \
-`#` Grass \
+`#` = Grass \
 `X` = Dirt \
 `.` = Air \
 `*` = Coin \

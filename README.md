@@ -3,6 +3,7 @@ I built a simple 2D platformer game and then implemented a Q-learning reinforcem
 
 ## User guide
 
+
 ### Prerequisites
 - `Python >= 3.10.12` (Tested with Python 3.10.12)
 - `Pip`

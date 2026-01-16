@@ -1,0 +1,7 @@
+numpy==2.2.4
+PySide6==6.8.2
+pytest
+pytest-timeout 
+pylint>=2.13
+pytest-pylint
+qdarkstyle

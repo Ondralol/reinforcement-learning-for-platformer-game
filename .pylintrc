@@ -1,0 +1,12 @@
+[MASTER]
+ignore=tests,venv,.git,__pycache__
+
+[MESSAGES CONTROL]
+disable=C0301, C0103
+
+[FORMAT]
+max-line-length=120
+
+[REPORTS]
+output-format=colorized
+reports=no

@@ -1,0 +1,53 @@
+name: Python CI
+
+on:
+  push:
+    branches:
+      - '**' # Matches all branches
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: python:3.11
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest test/ --ignore=test/test_game_widget.py --cov=src --cov-report=term
+
+  lint:
+    runs-on: ubuntu-latest
+    container: python:3.11
+    # This ensures lint runs after test, similar to GitLab stages
+    needs: test 
+    continue-on-error: true # Equivalent to allow_failure: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pylint # Ensure pylint is available
+
+      - name: Run Lint
+        run: pylint src/

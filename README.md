@@ -1,8 +1,11 @@
 # Reinforcement Learning for a Platformer Game
 I built a simple 2D platformer game and then implemented a Q-learning reinforcement learning algorithm that taught an agent how to win that game. More details can be found in [report](/report.pdf)
 
-## User guide
+## Preview
+https://github.com/user-attachments/assets/0b7e6e24-cbb2-4225-874a-60817a9b2b14
 
+
+## User guide
 
 ### Prerequisites
 - `Python >= 3.10.12` (Tested with Python 3.10.12)

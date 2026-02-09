@@ -2,6 +2,7 @@
 I built a simple 2D platformer game and then implemented a Q-learning reinforcement learning algorithm that taught an agent how to win that game. More details can be found in [report](/report.pdf)
 
 ## Preview
+Agent wins a level after it has been trained
 https://github.com/user-attachments/assets/0b7e6e24-cbb2-4225-874a-60817a9b2b14
 
 
